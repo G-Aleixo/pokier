@@ -23,7 +23,50 @@ import socket
 # diamonds
 
 # value is if the card has been dealt
-card = [[True for _ in range(4)] for _ in range(13)]
+cards = [[True for _ in range(4)] for _ in range(13)]
+
+def index2card(index: int, suit: int) -> str:
+    card = ""
+    
+    match index:
+        case 0:
+            card += "2"
+        case 1:
+            card += "3"
+        case 2:
+            card += "4"
+        case 3:
+            card += "5"
+        case 4:
+            card += "6"
+        case 5:
+            card += "7"
+        case 6:
+            card += "8"
+        case 7:
+            card += "9"
+        case 8:
+            card += "10"
+        case 9:
+            card += "J"
+        case 10:
+            card += "Q"
+        case 11:
+            card += "K"
+        case 12:
+            card += "A"
+    match suit:
+        case 0:
+            card += "S"
+        case 1:
+            card += "H"
+        case 2:
+            card += "C"
+        case 3:
+            card += "D"
+    
+    return card
+
 
 def handshake(addr: socket.socket) -> dict:
     # mock data
