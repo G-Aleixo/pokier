@@ -9,6 +9,7 @@
 - packet_name: SC or CS - incode_name - contained data - additional comment
 - deal cards: SC - DEAL - 4 ints representing 2 card data types
 - ready: CS - READY - READY
+- quit: CS - CLIENT_QUIT - QUIT
 - game_start: SC - START - START
 - play: CS - MY_TURN - MY_TURN - Indicates the player's turn has been reached
 - bet: CS - CLIENT_BET - int representing amount to bet addicionally to already bet amount, -1 for all in, 0 to pay
