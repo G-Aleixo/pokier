@@ -1,5 +1,9 @@
 import threading
 import socket
+import pickle
+
+def get_cards(server: socket.socket) -> tuple[list[int, int], list[int, int]]:
+    data = server.recv()
 
 def handshake(addr: socket.socket) -> dict:
 
@@ -8,7 +12,7 @@ def handshake(addr: socket.socket) -> dict:
         if addr.recv(1024) == b"CONFIRM":
             return True
     else:
-        return False    
+        return False
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,6 +25,22 @@ sock.connect((address, port))
 
 if handshake(sock):
     print("Connnected")
+    
+    print("""\
+Options:
+R[eady]
+Q[uit]: """)
+    
+    data = input()
+    
+    if data.startswith("R"):
+        sock.send(b"READY")
+    elif data.startswith("Q"):
+        sock.send(b"QUIT")
+        sock.close()
+        exit()
+    
+    print(pickle.loads(sock.recv(1024)))
 
 # Get input from player to show ready
 

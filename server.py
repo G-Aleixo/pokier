@@ -1,5 +1,5 @@
 import threading
-import random
+import random, pickle
 import socket
 
 card = tuple[int, int]
@@ -90,6 +90,9 @@ def deal_cards(player_amount: int) -> tuple[list[tuple[card, card]], list[card]]
     
     return player_hands, discard
 
+def send_cards(addr: socket.socket, cards):
+    addr.send(pickle.dumps(cards))
+
 def handshake(addr: socket.socket) -> dict:
     # mock data
 
@@ -103,6 +106,20 @@ def handshake(addr: socket.socket) -> dict:
     else:
         return None
 
+def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index: int) -> bool:
+    # wait to receive ready packet from addr or quit
+    data = addr.recv(1024).decode()
+    
+    if data == "READY":
+        print(f"Client {clients[addr]["name"]} is ready!")
+        return_list[index][0] = 1
+    elif data == "QUIT":
+        print(f"Client {clients[addr]["name"]} has quit!")
+        return_list[index][0] = -1
+    else:
+        print(f"client {clients[addr]["name"]} has sent not gud data: {data}")
+        return_list[index][0] = -2
+    
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -110,12 +127,14 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 address = "127.0.0.1"
 port = 50433
 
-max_players = 2
+max_players = 1
 player_count = 0
 
 clients = {}
 
 sock.bind((address, port))
+
+print("Listening for players")
 
 while player_count < max_players:
     sock.listen()
@@ -132,17 +151,64 @@ while player_count < max_players:
         player_count += 1
 
 print("All clients loaded")
+print("Awaiting all clients to get ready...")
+
+# 0 no response, 1 ready, -1 quit, -2 is error
+results: list[list[int, socket.socket]] = []
+
+threads: list[threading.Thread] = []
+index = 0
+for addr in clients:
+    results.append([0, addr])
+    threads.append(threading.Thread(target=wait_ready, args=(addr, results, index)))
+    
+    index += 1
+    
+for thread in threads:
+    print(f"Starting waiting thread: {thread.name}")
+    thread.start()
+
+print("Waiting for responses...")
+
+all_responded = False
+while not all_responded: # Wait till all the results are not 0
+    all_responded = True
+    for result in results:
+        if not result[0]:
+            all_responded = False
+            
+
+print(results)
+
+print("All responses gotten!")
+for result in results:
+    if result[0] == -1:
+        print(f"Client {clients[result[1]]["name"]} has quit")
+        print(f"Removing client {clients[result[1]]["name"]} from clients and closing sock")
+        result[1].close()
+        clients.pop(result[1])
+        player_count -= 1
+    elif result[0] == 1:
+        print(f"Client {clients[result[1]]["name"]} is ready")
+    elif result[0] == -2:
+        print(f"Client {clients[result[1]]["name"]} has errored")
+        
 
 print("Dealing cards")
 # deal cards
-cards, discarted = deal_cards(max_players)
+cards, discarted = deal_cards(player_count)
 
 for hand in cards:
     print_cards(hand)
 print_cards(discarted)
 
-# TODO: Send the cards to the clients
+i = 0
+for conn in clients:
+    send_cards(conn, cards[i])
+    i += 1
 
+
+print("closing all connections")
 for conn in clients:
     conn.close()
 
