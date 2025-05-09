@@ -1,5 +1,6 @@
 import threading
 import random, pickle
+import time
 import socket
 
 card = tuple[int, int]
@@ -93,6 +94,23 @@ def deal_cards(player_amount: int) -> tuple[list[tuple[card, card]], list[card]]
 def send_cards(addr: socket.socket, cards):
     addr.send(pickle.dumps(cards))
 
+def broadcast_server(broadcast_port: int):
+    global stop_broadcast
+
+    print("Broadcasting started")
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+    print("Stating broadcast loop")
+
+    while not stop_broadcast:
+        sock.sendto(b"PKR BROADCAST", ("<broadcast>", broadcast_port))
+        time.sleep(2)
+    sock.close()
+    print("Broadcasting thread stopped")
+
 def handshake(addr: socket.socket) -> dict:
     # mock data
 
@@ -111,28 +129,35 @@ def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index
     data = addr.recv(1024).decode()
     
     if data == "READY":
-        print(f"Client {clients[addr]["name"]} is ready!")
+        print(f"Client {clients[addr]['name']} is ready!")
         return_list[index][0] = 1
     elif data == "QUIT":
-        print(f"Client {clients[addr]["name"]} has quit!")
+        print(f"Client {clients[addr]['name']} has quit!")
         return_list[index][0] = -1
     else:
-        print(f"client {clients[addr]["name"]} has sent not gud data: {data}")
+        print(f"client {clients[addr]['name']} has sent not gud data: {data}")
         return_list[index][0] = -2
     
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-address = "127.0.0.1"
+address = "192.168.56.1" # socket.gethostbyname(socket.gethostname())
+print(socket.gethostname())
 port = 50433
+BROADCASTING_PORT = 54432
 
 max_players = 1
 player_count = 0
 
 clients = {}
 
+print(f"Binding socket to {address}:{port}")
 sock.bind((address, port))
+
+print("Starting broadcasting thread")
+threading.Thread(target=broadcast_server, args=(BROADCASTING_PORT,)).start()
+stop_broadcast = False
 
 print("Listening for players")
 
@@ -151,6 +176,8 @@ while player_count < max_players:
         player_count += 1
 
 print("All clients loaded")
+print("Stopping broadcasting thread")
+stop_broadcast = True
 print("Awaiting all clients to get ready...")
 
 # 0 no response, 1 ready, -1 quit, -2 is error
@@ -183,15 +210,15 @@ print(results)
 print("All responses gotten!")
 for result in results:
     if result[0] == -1:
-        print(f"Client {clients[result[1]]["name"]} has quit")
-        print(f"Removing client {clients[result[1]]["name"]} from clients and closing sock")
+        print(f"Client {clients[result[1]]['name']} has quit")
+        print(f"Removing client {clients[result[1]]['name']} from clients and closing sock")
         result[1].close()
         clients.pop(result[1])
         player_count -= 1
     elif result[0] == 1:
-        print(f"Client {clients[result[1]]["name"]} is ready")
+        print(f"Client {clients[result[1]]['name']} is ready")
     elif result[0] == -2:
-        print(f"Client {clients[result[1]]["name"]} has errored")
+        print(f"Client {clients[result[1]]['name']} has errored")
         
 
 print("Dealing cards")
