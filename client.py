@@ -9,7 +9,7 @@ card = tuple[int, int]
 BROADCAST_PORT = 54432
 
 def get_server_ip(broadcast_port: int):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.bind(("0.0.0.0", broadcast_port))
 

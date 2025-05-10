@@ -28,16 +28,16 @@ card = tuple[int, int]
 # diamonds
 
 # value is if the card has been dealt
-cards = [[True for _ in range(4)] for _ in range(13)]
+cards: list[bool] = [[True for _ in range(4)] for _ in range(13)]
 
 
 def deal_cards(player_amount: int) -> tuple[list[tuple[card, card]], list[card]]:
-    card_list = [(rank, suit) for rank in range(13) for suit in range(4)]
+    card_list: list[card] = [(rank, suit) for rank in range(13) for suit in range(4)]
     random.shuffle(card_list) # in random we trust
     
-    discard = []
+    discard: list[card] = []
     
-    player_hands = [[] for _ in range(player_amount)]
+    player_hands: list[list[card]] = [[] for _ in range(player_amount)]
     
     for i in range(player_amount * 2):
         player_hands[i % player_amount].append(card_list.pop(0))
@@ -68,7 +68,7 @@ def broadcast_server(broadcast_port: int):
 def handshake(addr: socket.socket) -> dict:
     # mock data
 
-    data = {"name": player_count}
+    data: dict = {"name": player_count}
 
     addr.send(b"PKER GAME")
 
@@ -80,7 +80,7 @@ def handshake(addr: socket.socket) -> dict:
 
 def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index: int) -> bool:
     # wait to receive ready packet from addr or quit
-    data = addr.recv(1024).decode()
+    data: str = addr.recv(1024).decode()
     
     if data == "READY":
         print(f"Client {clients[addr]['name']} is ready!")
@@ -94,17 +94,16 @@ def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index
     
 
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-port = 50433
+port: int = 50433
 address = socket.gethostbyname(socket.gethostname())
-print(socket.gethostname())
 BROADCASTING_PORT = 54432
 
-max_players = 1
-player_count = 0
+max_players: int = 1
+player_count: int = 0
 
-clients = {}
+clients: dict[dict] = {}
 
 print(f"Binding socket to {address}:{port}")
 sock.bind((address, port))
@@ -138,7 +137,7 @@ print("Awaiting all clients to get ready...")
 results: list[list[int, socket.socket]] = []
 
 threads: list[threading.Thread] = []
-index = 0
+index: int = 0
 for addr in clients:
     results.append([0, addr])
     threads.append(threading.Thread(target=wait_ready, args=(addr, results, index)))
@@ -151,7 +150,7 @@ for thread in threads:
 
 print("Waiting for responses...")
 
-all_responded = False
+all_responded: bool = False
 while not all_responded: # Wait till all the results are not 0
     all_responded = True
     for result in results:
