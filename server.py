@@ -106,7 +106,7 @@ def broadcast_server(broadcast_port: int):
     print("Stating broadcast loop")
 
     while not stop_broadcast:
-        sock.sendto(b"PKR BROADCAST", ("<broadcast>", broadcast_port))
+        sock.sendto(("PKR BROADCAST:" + str(socket.gethostbyname(socket.gethostname()))).encode(), ("255.255.255.255", broadcast_port))
         time.sleep(2)
     sock.close()
     print("Broadcasting thread stopped")
@@ -142,9 +142,9 @@ def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-address = "192.168.56.1" # socket.gethostbyname(socket.gethostname())
-print(socket.gethostname())
 port = 50433
+address = socket.gethostbyname(socket.gethostname())
+print(socket.gethostname())
 BROADCASTING_PORT = 54432
 
 max_players = 1
@@ -156,8 +156,8 @@ print(f"Binding socket to {address}:{port}")
 sock.bind((address, port))
 
 print("Starting broadcasting thread")
-threading.Thread(target=broadcast_server, args=(BROADCASTING_PORT,)).start()
 stop_broadcast = False
+threading.Thread(target=broadcast_server, args=(BROADCASTING_PORT,)).start()
 
 print("Listening for players")
 

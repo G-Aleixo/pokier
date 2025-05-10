@@ -6,26 +6,25 @@ BROADCAST_PORT = 54432
 
 def get_server_ip(broadcast_port: int):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
     sock.bind(("0.0.0.0", broadcast_port))
 
     data, addr = sock.recvfrom(1024)
 
-    while data != b"PKR BROADCAST":
+    while not data.decode().startswith("PKR BROADCAST"):
         data, addr = sock.recvfrom(1024)
 
-    print(f"Got broadcast from {addr}, returning it's ip")
-    print("Closing getting ip socket")
+    print(f"Got broadcast from {addr}")
+    print(f"Got data: {data}")
+    print(f"Returning sent ip: {data.decode()[14:]}")
+    print("Closing getting ip socket function")
     sock.close()
-    return addr
+    return data.decode()[14:]
 
 def get_cards(server: socket.socket) -> tuple[list[int, int], list[int, int]]:
     data = server.recv()
 
 def handshake(addr: socket.socket) -> dict:
-
     if addr.recv(1024) == b"PKER GAME":
         addr.send(b"YES")
         if addr.recv(1024) == b"CONFIRM":
@@ -35,10 +34,10 @@ def handshake(addr: socket.socket) -> dict:
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-address = get_server_ip(BROADCAST_PORT)[0] #"127.0.0.1"
+address = get_server_ip(BROADCAST_PORT) #"127.0.0.1"
 port = 50433
 
-clients = {}
+print(f"Connecting to server at ip: {address}")
 
 sock.connect((address, port))
 
