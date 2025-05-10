@@ -132,6 +132,8 @@ while player_count < max_players:
     if data != None:
         clients[addr] = data
         player_count += 1
+    else:
+        addr.close()
 
 print("All clients loaded")
 print("Stopping broadcasting thread")
@@ -187,6 +189,8 @@ for hand in cards:
     helper.print_cards(hand)
 helper.print_cards(discarted)
 
+# This may have some bad implications with bad ping
+# I'll deal with it in the future :) - 09/05/2025
 i = 0
 for conn in clients:
     send_cards(conn, cards[i])

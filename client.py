@@ -28,7 +28,7 @@ def get_server_ip(broadcast_port: int):
 def get_cards(server: socket.socket) -> tuple[list[int, int], list[int, int]]:
     return pickle.loads(server.recv(1024))
 
-def handshake(addr: socket.socket) -> dict:
+def handshake(addr: socket.socket) -> bool:
     if addr.recv(1024) == b"PKER GAME":
         addr.send(b"YES")
         if addr.recv(1024) == b"CONFIRM":
@@ -62,19 +62,13 @@ Q[uit]: """)
         sock.close()
         exit()
     
+    print("Waiting for others to be ready")
+    
+    # Wait to get dealt cards...
     cards: list[card] = get_cards()
     
+    print("Dealt cards:")
     helper.print_cards(cards)
-
-# Get input from player to show ready
-
-# Send ready
-
-# Await further instructions
-
-# All ready instruction
-
-# Ack
 
 # Game loop
 
