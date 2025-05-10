@@ -2,6 +2,10 @@ import threading
 import socket
 import pickle
 
+import helper
+
+card = tuple[int, int]
+
 BROADCAST_PORT = 54432
 
 def get_server_ip(broadcast_port: int):
@@ -20,9 +24,9 @@ def get_server_ip(broadcast_port: int):
     print("Closing getting ip socket function")
     sock.close()
     return data.decode()[14:]
-
+ 
 def get_cards(server: socket.socket) -> tuple[list[int, int], list[int, int]]:
-    data = server.recv()
+    return pickle.loads(server.recv(1024))
 
 def handshake(addr: socket.socket) -> dict:
     if addr.recv(1024) == b"PKER GAME":
@@ -32,10 +36,10 @@ def handshake(addr: socket.socket) -> dict:
     else:
         return False
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-address = get_server_ip(BROADCAST_PORT) #"127.0.0.1"
-port = 50433
+address: str = get_server_ip(BROADCAST_PORT) #"127.0.0.1"
+port: int = 50433
 
 print(f"Connecting to server at ip: {address}")
 
@@ -49,7 +53,7 @@ Options:
 R[eady]
 Q[uit]: """)
     
-    data = input()
+    data: str = input()
     
     if data.startswith("R"):
         sock.send(b"READY")
@@ -58,7 +62,9 @@ Q[uit]: """)
         sock.close()
         exit()
     
-    print(pickle.loads(sock.recv(1024)))
+    cards: list[card] = get_cards()
+    
+    helper.print_cards(cards)
 
 # Get input from player to show ready
 
