@@ -1,6 +1,6 @@
 import threading
 import socket
-import pickle
+import pickle, json
 
 import helper
 
@@ -32,6 +32,15 @@ def handshake(addr: socket.socket) -> bool:
     if addr.recv(1024) == b"PKER GAME":
         addr.send(b"YES")
         if addr.recv(1024) == b"CONFIRM":
+            # send data to server
+            # player name TODO: add way to add name
+            # game net version
+            # more data idk
+            
+            # server will put name
+            data = {"GAME_VERSION": "0.1"}
+            addr.send(json.dumps(data).encode())
+            
             return True
     else:
         return False
@@ -65,7 +74,7 @@ Q[uit]: """)
     print("Waiting for others to be ready")
     
     # Wait to get dealt cards...
-    cards: list[card] = get_cards()
+    cards: list[card] = get_cards(sock)
     
     print("Dealt cards:")
     helper.print_cards(cards)

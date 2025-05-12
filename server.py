@@ -1,6 +1,7 @@
 import threading
-import random, pickle, time
+import random, time
 import socket
+import pickle, json
 
 import helper
 
@@ -71,14 +72,15 @@ def broadcast_server(broadcast_port: int):
     print("Broadcasting thread stopped")
 
 def handshake(addr: socket.socket) -> dict:
-    # mock data
-
-    data: dict = {"name": player_count}
-
     addr.send(b"PKER GAME")
 
     if addr.recv(1024) == b"YES":
         addr.send(b"CONFIRM")
+        
+        data = json.loads(addr.recv(2048).decode())
+        
+        data["name"] = player_count #TODO: get from client
+        
         return data
     else:
         return None
