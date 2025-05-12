@@ -62,7 +62,7 @@ def broadcast_server(broadcast_port: int):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-    print("Stating broadcast loop")
+    print("Starting broadcast loop")
 
     while not stop_broadcast:
         sock.sendto(("PKR BROADCAST:" + str(socket.gethostbyname(socket.gethostname()))).encode(), ("255.255.255.255", broadcast_port))
