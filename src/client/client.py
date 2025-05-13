@@ -4,17 +4,25 @@ import pickle, json
 
 import helper
 import networking as net
+import core
 
 card = tuple[int, int]
 
 sock = net.connect()
 
-idk_name = net.handshake(sock) #TODO: change this name later
+#TODO: Add server selection later
 
-if idk_name:
-    print("Connnected")
+accepted = net.handshake(sock) #TODO: change this name later
+
+if not accepted:
+    print("Was not accepted into server for reason: IMPLEMENT LATER")
+    sock.close()
+    print("Closing game...")
+    exit()
     
-    print("""\
+print("Connnected")
+
+print("""\
 Options:
 R[eady]
 Q[uit]: """)
@@ -35,6 +43,60 @@ Q[uit]: """)
     
     print("Dealt cards:")
     helper.print_cards(cards)
+
+data: str = input()
+
+if data.startswith("R"):
+    sock.send(b"READY")
+elif data.startswith("Q"):
+    sock.send(b"QUIT")
+    sock.close()
+    print("Closing game...") #TODO: Add select to go to another server or quit out of game
+    exit()
+
+print("Waiting for everyone to be ready")
+
+# Wait to get dealt cards...
+cards: list[card] = net.get_cards(sock)
+
+print("Dealt cards:")
+helper.print_cards(cards)
+
+# Wait till my turn
+data = sock.recv(1024).decode()
+
+if data == "TURN":
+    action: str = core.get_action()
+    
+    if action == "B":
+        value = input("How much to bet?: ") #TODO: verify number
+        sock.send(b"CLIENT_BET")
+        sock.send(value)
+    elif action == "C":
+        sock.send(b"CLIENT_CALL")
+    elif action == "P":
+        sock.send(b"CLIENT_CHECK")
+    elif action == "F":
+        sock.send(b"CLIENT_FOLD")
+    else:
+        print(f"Unknown action: {action}")
+elif data.startswith("PLAYER_"):
+    # May be BET, CALL or FOLD
+    # TODO: to something with it later
+    
+    name = sock.recv(1024).decode()
+    
+    if data.endswith("BET"):
+        amount = sock.recv(1024)
+        print(f"{name} has BET {amount}")
+    elif data.endswith("CALL"):
+        print(f"{name} has called")
+    elif data.endswith("CHECK"):
+        print(f"{name} has checked")
+    elif data.endswith("FOLD"):
+        print(f"{name} has folded")
+    else:
+        print(f"Unknown data: {data}")
 
 # Game loop
 
