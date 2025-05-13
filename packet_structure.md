@@ -13,8 +13,10 @@
 - game_start: SC - START - START
 - play: SC - TURN - TURN - Indicates the player's turn has been reached
 - call: CS - CLIENT_CALL - CLIENT_CALL
-- call: SC - PLAYER_CALL - player_id/name that indicates that that player has called
-- bet: CS - CLIENT_BET - int representing amount to bet addicionally to already bet amount, -1 for all in
-- bet: SC - PLAYER_BET - player_id/name and an int about how much they bet, -1 for all in
+- call: SC - PLAYER_CALL - PLAYER_CALL then player_id/name that indicates that that player has called
+- bet: CS - CLIENT_BET - CLIENT_BET then int representing amount to bet addicionally to already bet amount, -1 for all in
+- bet: SC - PLAYER_BET - PLAYER_BET then player_id/name then an int about how much they bet, -1 for all in
+- check: CS - CLIENT_CHECK - CLIENT_CHECK
+- check: SC - PLAYER_CHECK - PLAYER_CHECK then player_id/name about who checked
 - fold: CS - CLIENT_FOLD - CLIENT_FOLD
-- fold: SC - PLAYER_FOLD - player_id/name who has folded
+- fold: SC - PLAYER_FOLD - PLAYER_FOLD then player_id/name who has folded
