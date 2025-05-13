@@ -74,3 +74,10 @@ def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index
 
 def send_cards(addr: socket.socket, cards):
     addr.send(pickle.dumps(cards))
+
+def broadcast(clients: list[socket.socket], data, except_addr: socket.socket | None = None):
+    #TODO: use threading
+    for client in clients:
+        if client == except_addr:
+            continue
+        client.send(data)

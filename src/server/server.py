@@ -117,6 +117,36 @@ for conn in clients:
     net.send_cards(conn, cards[i])
     i += 1
 
+betting_done = False
+has_raised = False
+last_raise = -1
+bet_amount = 0
+player_index = 0
+
+while player_index < core.max_players:
+    conn: socket.socket = list(clients.keys())[player_index]
+    
+    conn.send(b"TURN")
+    
+    data = conn.recv(1024).decode()
+    
+    if data == "CLIENT_CALL":
+        net.broadcast(clients.keys(), b"PLAYER_CALL", except_addr=conn)
+        net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
+    elif data == "CLIENT_CHECK":
+        net.broadcast(clients.keys(), b"PLAYER_CHECK", except_addr=conn)
+        net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
+    elif data == "CLIENT_BET":
+        amount = conn.recv(1024)
+        net.broadcast(clients.keys(), b"PLAYER_BET", except_addr=conn)
+        net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
+        net.broadcast(clients.keys(), amount, except_addr=conn)
+    elif data == "CLIENT_FOLD":
+        net.broadcast(clients.keys(), b"PLAYER_FOLD", except_addr=conn)
+        net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
+        
+    
+    player_index += 1
 
 print("closing all connections")
 for conn in clients:

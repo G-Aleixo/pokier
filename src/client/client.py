@@ -62,41 +62,43 @@ cards: list[card] = net.get_cards(sock)
 print("Dealt cards:")
 helper.print_cards(cards)
 
-# Wait till my turn
-data = sock.recv(1024).decode()
 
-if data == "TURN":
-    action: str = core.get_action()
+while True:
+    # Wait till my turn
+    data = sock.recv(1024).decode()
     
-    if action == "B":
-        value = input("How much to bet?: ") #TODO: verify number
-        sock.send(b"CLIENT_BET")
-        sock.send(value)
-    elif action == "C":
-        sock.send(b"CLIENT_CALL")
-    elif action == "P":
-        sock.send(b"CLIENT_CHECK")
-    elif action == "F":
-        sock.send(b"CLIENT_FOLD")
-    else:
-        print(f"Unknown action: {action}")
-elif data.startswith("PLAYER_"):
-    # May be BET, CALL or FOLD
-    # TODO: to something with it later
-    
-    name = sock.recv(1024).decode()
-    
-    if data.endswith("BET"):
-        amount = sock.recv(1024)
-        print(f"{name} has BET {amount}")
-    elif data.endswith("CALL"):
-        print(f"{name} has called")
-    elif data.endswith("CHECK"):
-        print(f"{name} has checked")
-    elif data.endswith("FOLD"):
-        print(f"{name} has folded")
-    else:
-        print(f"Unknown data: {data}")
+    if data == "TURN":
+        action: str = core.get_action()
+        
+        if action == "B":
+            value = input("How much to bet?: ") #TODO: verify number
+            sock.send(b"CLIENT_BET")
+            sock.send(value)
+        elif action == "C":
+            sock.send(b"CLIENT_CALL")
+        elif action == "P":
+            sock.send(b"CLIENT_CHECK")
+        elif action == "F":
+            sock.send(b"CLIENT_FOLD")
+        else:
+            print(f"Unknown action: {action}")
+    elif data.startswith("PLAYER_"):
+        # May be BET, CALL or FOLD
+        # TODO: to something with it later
+        
+        name = sock.recv(1024).decode()
+        
+        if data.endswith("BET"):
+            amount = sock.recv(1024)
+            print(f"{name} has BET {amount}")
+        elif data.endswith("CALL"):
+            print(f"{name} has called")
+        elif data.endswith("CHECK"):
+            print(f"{name} has checked")
+        elif data.endswith("FOLD"):
+            print(f"{name} has folded")
+        else:
+            print(f"Unknown data: {data}")
 
 # Game loop
 

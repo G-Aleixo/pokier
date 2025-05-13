@@ -3,7 +3,9 @@ import random
 card = tuple[int, int]
 
 
-max_players: int = 1
+max_players: int = 2
+
+chips_for_player: int = 100
 
 
 # value is if the card has been dealt
