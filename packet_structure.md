@@ -11,7 +11,7 @@
 - ready: CS - READY - READY
 - quit: CS - CLIENT_QUIT - QUIT
 - game_start: SC - START - START
-- play: CS - MY_TURN - MY_TURN - Indicates the player's turn has been reached
+- play: SC - TURN - TURN - Indicates the player's turn has been reached
 - call: CS - CLIENT_CALL - CLIENT_CALL
 - call: SC - PLAYER_CALL - player_id/name that indicates that that player has called
 - bet: CS - CLIENT_BET - int representing amount to bet addicionally to already bet amount, -1 for all in
