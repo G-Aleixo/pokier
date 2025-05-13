@@ -8,7 +8,6 @@ import networking as net
 import core
 import helper
 
-card = tuple[int, int]
 
 # []
 # 2
@@ -31,47 +30,6 @@ card = tuple[int, int]
 # clubs
 # diamonds
 
-# value is if the card has been dealt
-cards: list[bool] = [[True for _ in range(4)] for _ in range(13)]
-
-
-def deal_cards(player_amount: int) -> tuple[list[tuple[card, card]], list[card]]:
-    card_list: list[card] = [(rank, suit) for rank in range(13) for suit in range(4)]
-    random.shuffle(card_list) # in random we trust
-    
-    discard: list[card] = []
-    
-    player_hands: list[list[card]] = [[] for _ in range(player_amount)]
-    
-    for i in range(player_amount * 2):
-        dealt_card: card = card_list.pop(0) 
-        player_hands[i % player_amount].append(dealt_card)
-        cards[dealt_card[0]][dealt_card[1]] = False
-        
-        discarted: card = card_list.pop(0) 
-        discard.append(discarted)
-        cards[discarted[0]][discarted[1]] = False
-    
-    return player_hands, discard
-
-def broadcast_server(broadcast_port: int):
-    global stop_broadcast
-
-    print("Broadcasting started")
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-    print("Starting broadcast loop")
-
-    while not stop_broadcast:
-        sock.sendto(("PKR BROADCAST:" + str(socket.gethostbyname(socket.gethostname()))).encode(), ("255.255.255.255", broadcast_port))
-        time.sleep(2)
-    sock.close()
-    print("Broadcasting thread stopped")
-    
-
 
 sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -83,8 +41,8 @@ print(f"Binding socket to {address}:{port}")
 sock.bind((address, port))
 
 print("Starting broadcasting thread")
-stop_broadcast = False
-threading.Thread(target=broadcast_server, args=(BROADCASTING_PORT,)).start()
+stop_broadcast = [False]
+threading.Thread(target=net.broadcast_server, args=(BROADCASTING_PORT, stop_broadcast)).start()
 
 print("Listening for players")
 
@@ -93,7 +51,7 @@ clients, player_count = net.connect_players(sock)
 
 print("All clients loaded")
 print("Stopping broadcasting thread")
-stop_broadcast = True
+stop_broadcast[0] = True
 print("Awaiting all clients to get ready...")
 
 # 0 no response, 1 ready, -1 quit, -2 is error
@@ -139,7 +97,7 @@ for result in results:
 
 print("Dealing cards")
 # deal cards
-cards, discarted = deal_cards(player_count)
+cards, discarted = core.deal_cards(player_count)
 
 for hand in cards:
     helper.print_cards(hand)

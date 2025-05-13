@@ -1,9 +1,26 @@
 import socket
 import pickle, json
+import time
 
 import core
 
 player_count: int = 0
+
+def broadcast_server(broadcast_port: int, stop_broadcast: list[bool]):
+
+    print("Broadcasting started")
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+    print("Starting broadcast loop")
+
+    while not stop_broadcast[0]:
+        sock.sendto(("PKR BROADCAST:" + str(socket.gethostbyname(socket.gethostname()))).encode(), ("255.255.255.255", broadcast_port))
+        time.sleep(2)
+    sock.close()
+    print("Broadcasting thread stopped")
 
 def connect_players(server_sock) -> tuple[dict[dict], int]:
     global player_count
