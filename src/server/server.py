@@ -3,7 +3,10 @@ import random, time
 import socket
 import pickle, json
 
-import common.helper as helper
+
+import networking as net
+import core
+import helper
 
 card = tuple[int, int]
 
@@ -51,9 +54,6 @@ def deal_cards(player_amount: int) -> tuple[list[tuple[card, card]], list[card]]
     
     return player_hands, discard
 
-def send_cards(addr: socket.socket, cards):
-    addr.send(pickle.dumps(cards))
-
 def broadcast_server(broadcast_port: int):
     global stop_broadcast
 
@@ -70,34 +70,6 @@ def broadcast_server(broadcast_port: int):
         time.sleep(2)
     sock.close()
     print("Broadcasting thread stopped")
-
-def handshake(addr: socket.socket) -> dict:
-    addr.send(b"PKER GAME")
-
-    if addr.recv(1024) == b"YES":
-        addr.send(b"CONFIRM")
-        
-        data = json.loads(addr.recv(2048).decode())
-        
-        data["name"] = player_count #TODO: get from client
-        
-        return data
-    else:
-        return None
-
-def wait_ready(addr: socket.socket, return_list: list[int, socket.socket], index: int) -> bool:
-    # wait to receive ready packet from addr or quit
-    data: str = addr.recv(1024).decode()
-    
-    if data == "READY":
-        print(f"Client {clients[addr]['name']} is ready!")
-        return_list[index][0] = 1
-    elif data == "QUIT":
-        print(f"Client {clients[addr]['name']} has quit!")
-        return_list[index][0] = -1
-    else:
-        print(f"client {clients[addr]['name']} has sent not gud data: {data}")
-        return_list[index][0] = -2
     
 
 
@@ -106,11 +78,6 @@ sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 port: int = 50433
 address = socket.gethostbyname(socket.gethostname())
 BROADCASTING_PORT = 54432
-
-max_players: int = 1
-player_count: int = 0
-
-clients: dict[dict] = {}
 
 print(f"Binding socket to {address}:{port}")
 sock.bind((address, port))
@@ -121,21 +88,8 @@ threading.Thread(target=broadcast_server, args=(BROADCASTING_PORT,)).start()
 
 print("Listening for players")
 
-while player_count < max_players:
-    sock.listen()
+clients, player_count = net.connect_players(sock)
 
-    addr, port = sock.accept()
-    print(f"Accepted client at port: {port} at address {addr}")
-
-    data = handshake(addr)
-
-    print(f"Data from client is {data}")
-
-    if data != None:
-        clients[addr] = data
-        player_count += 1
-    else:
-        addr.close()
 
 print("All clients loaded")
 print("Stopping broadcasting thread")
@@ -149,7 +103,7 @@ threads: list[threading.Thread] = []
 index: int = 0
 for addr in clients:
     results.append([0, addr])
-    threads.append(threading.Thread(target=wait_ready, args=(addr, results, index)))
+    threads.append(threading.Thread(target=net.wait_ready, args=(addr, results, index, clients)))
     
     index += 1
     
@@ -195,7 +149,7 @@ helper.print_cards(discarted)
 # I'll deal with it in the future :) - 09/05/2025
 i = 0
 for conn in clients:
-    send_cards(conn, cards[i])
+    net.send_cards(conn, cards[i])
     i += 1
 
 

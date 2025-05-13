@@ -1,0 +1,1 @@
+max_players: int = 1
