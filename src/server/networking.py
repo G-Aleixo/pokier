@@ -6,7 +6,7 @@ import core
 
 player_count: int = 0
 
-def broadcast_server(broadcast_port: int, stop_broadcast: list[bool]):
+def broadcast_server(broadcasted_address: str, broadcast_port: int, stop_broadcast: list[bool]):
 
     print("Broadcasting started")
 
@@ -17,7 +17,7 @@ def broadcast_server(broadcast_port: int, stop_broadcast: list[bool]):
     print("Starting broadcast loop")
 
     while not stop_broadcast[0]:
-        sock.sendto(("PKR BROADCAST:" + str(socket.gethostbyname(socket.gethostname()))).encode(), ("255.255.255.255", broadcast_port))
+        sock.sendto(("PKR BROADCAST:" + broadcasted_address).encode(), ("255.255.255.255", broadcast_port))
         time.sleep(2)
     sock.close()
     print("Broadcasting thread stopped")

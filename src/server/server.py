@@ -34,7 +34,14 @@ import helper
 sock: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port: int = 50433
-address = socket.gethostbyname(socket.gethostname())
+addressess = socket.getaddrinfo(socket.gethostname(), port)
+
+for i in range(len(addressess)):
+    print(f"{i}: {addressess[i]}")
+choice = int(input("Choose which addr to use"))
+
+address = addressess[choice][-1][0]
+
 BROADCASTING_PORT = 54432
 
 print(f"Binding socket to {address}:{port}")
@@ -42,7 +49,7 @@ sock.bind((address, port))
 
 print("Starting broadcasting thread")
 stop_broadcast = [False]
-threading.Thread(target=net.broadcast_server, args=(BROADCASTING_PORT, stop_broadcast)).start()
+threading.Thread(target=net.broadcast_server, args=(address, BROADCASTING_PORT, stop_broadcast)).start()
 
 print("Listening for players")
 

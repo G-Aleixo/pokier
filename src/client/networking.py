@@ -8,6 +8,8 @@ def get_server_ip(broadcast_port: int):
     sock: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.bind(("0.0.0.0", broadcast_port))
+    
+    print("Getting server ip...")
 
     data, addr = sock.recvfrom(1024)
 
