@@ -19,7 +19,7 @@ Options:
 R[eady]
 Q[uit]: """)
     
-    data: str = input()
+    data: str = input().upper()
     
     if data.startswith("R"):
         sock.send(b"READY")
