@@ -50,7 +50,7 @@ while True:
     # Wait till my turn
     data = sock.recv(1024).decode()
     
-    if data == "TURN":
+    if data.find("TURN") != -1:
         action: str = core.get_action()
         
         if action == "B":

@@ -84,7 +84,7 @@ while not all_responded: # Wait till all the results are not 0
     for result in results:
         if not result[0]:
             all_responded = False
-            
+
 
 print(results)
 
@@ -117,31 +117,61 @@ for conn in clients:
     net.send_cards(conn, cards[i])
     i += 1
 
-betting_done = False
-has_raised = False
-last_raise = -1
-bet_amount = 0
-player_index = 0
+betting_done: bool = False
+has_raised: bool = False
+last_raise: int = -1
+bet_amount: list[int] = [0 for _ in range(player_count)]
+player_index: int = 0
 
-while player_index < core.max_players:
-    conn: socket.socket = list(clients.keys())[player_index]
+folded_list: list[int] = []
+
+while betting_done != True:#core.max_players:
+    conn: socket.socket = list(clients.keys())[player_index%player_count]
     
+    # Stop when
+    # No one bet and reached final player
+    # Reached last_raise
+    # 
+
+    if player_index%last_raise == 0 and last_raise != -1: # Reached person who bet after other called/folded
+        betting_done = True
+        break
+    elif last_raise == -1 and player_index == player_count and not has_raised: # No one bet
+        betting_done = True
+        break
+
+    # if player_index%player_count in folded_list:
+    #     conn.send(b"SKIP")
+    #     player_index += 1
+    #     continue # Go to the next player
     conn.send(b"TURN")
     
     data = conn.recv(1024).decode()
     
     if data == "CLIENT_CALL":
+        bet_amount[player_index%player_count] = bet_amount[(player_index - 1)%player_count]
+
         net.broadcast(clients.keys(), b"PLAYER_CALL", except_addr=conn)
         net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
     elif data == "CLIENT_CHECK":
+        if last_raise != -1:
+            ... #TODO: send invalid
         net.broadcast(clients.keys(), b"PLAYER_CHECK", except_addr=conn)
         net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
     elif data == "CLIENT_BET":
         amount = conn.recv(1024)
+
+        #TODO: Verify amount
+        has_raised = True
+        bet_amount[player_index%player_count] = bet_amount[(player_index - 1)%player_count] + amount
+
         net.broadcast(clients.keys(), b"PLAYER_BET", except_addr=conn)
         net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
         net.broadcast(clients.keys(), amount, except_addr=conn)
     elif data == "CLIENT_FOLD":
+        # Register fold to folded_list
+        folded_list.append(player_index%player_count)
+
         net.broadcast(clients.keys(), b"PLAYER_FOLD", except_addr=conn)
         net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
         

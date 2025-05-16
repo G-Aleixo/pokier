@@ -12,6 +12,7 @@
 - quit: CS - CLIENT_QUIT - QUIT
 - game_start: SC - START - START
 - play: SC - TURN - TURN - Indicates the player's turn has been reached
+- skip: SC - SKIP - SKIP - Skipped player because they have folded or other circunstances
 - call: CS - CLIENT_CALL - CLIENT_CALL
 - call: SC - PLAYER_CALL - PLAYER_CALL then player_id/name that indicates that that player has called
 - bet: CS - CLIENT_BET - CLIENT_BET then int representing amount to bet addicionally to already bet amount, -1 for all in
@@ -20,3 +21,4 @@
 - check: SC - PLAYER_CHECK - PLAYER_CHECK then player_id/name about who checked
 - fold: CS - CLIENT_FOLD - CLIENT_FOLD
 - fold: SC - PLAYER_FOLD - PLAYER_FOLD then player_id/name who has folded
+- invalid: SC - INVALID - INVALID - Indicates that the move the client sent is invalid
