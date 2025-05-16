@@ -19,32 +19,15 @@ if not accepted:
     sock.close()
     print("Closing game...")
     exit()
-    
+
 print("Connnected")
 
 print("""\
 Options:
 R[eady]
 Q[uit]: """)
-    
-    data: str = input().upper()
-    
-    if data.startswith("R"):
-        sock.send(b"READY")
-    elif data.startswith("Q"):
-        sock.send(b"QUIT")
-        sock.close()
-        exit()
-    
-    print("Waiting for others to be ready")
-    
-    # Wait to get dealt cards...
-    cards: list[card] = net.get_cards(sock)
-    
-    print("Dealt cards:")
-    helper.print_cards(cards)
 
-data: str = input()
+data: str = input().upper()
 
 if data.startswith("R"):
     sock.send(b"READY")
@@ -53,8 +36,8 @@ elif data.startswith("Q"):
     sock.close()
     print("Closing game...") #TODO: Add select to go to another server or quit out of game
     exit()
-
-print("Waiting for everyone to be ready")
+    
+print("Waiting for others to be ready")
 
 # Wait to get dealt cards...
 cards: list[card] = net.get_cards(sock)
