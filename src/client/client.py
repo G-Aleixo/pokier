@@ -54,9 +54,9 @@ while True:
         action: str = core.get_action()
         
         if action == "B":
-            value = input("How much to bet?: ") #TODO: verify number
+            value = int(input("How much to bet?: ")) #TODO: verify number
             sock.send(b"CLIENT_BET")
-            sock.send(value)
+            sock.send(value.to_bytes(4))
         elif action == "C":
             sock.send(b"CLIENT_CALL")
         elif action == "P":
@@ -72,7 +72,7 @@ while True:
         name = sock.recv(1024).decode()
         
         if data.endswith("BET"):
-            amount = sock.recv(1024)
+            amount = int.from_bytes(sock.recv(1024))
             print(f"{name} has BET {amount}")
         elif data.endswith("CALL"):
             print(f"{name} has called")

@@ -159,7 +159,7 @@ while betting_done != True:#core.max_players:
         net.broadcast(clients.keys(), b"PLAYER_CHECK", except_addr=conn)
         net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
     elif data == "CLIENT_BET":
-        amount = conn.recv(1024)
+        amount = int.from_bytes(conn.recv(1024))
 
         #TODO: Verify amount
         has_raised = True
@@ -167,7 +167,7 @@ while betting_done != True:#core.max_players:
 
         net.broadcast(clients.keys(), b"PLAYER_BET", except_addr=conn)
         net.broadcast(clients.keys(), clients[conn]["name"].encode(), except_addr=conn)
-        net.broadcast(clients.keys(), amount, except_addr=conn)
+        net.broadcast(clients.keys(), amount.to_bytes(4), except_addr=conn)
     elif data == "CLIENT_FOLD":
         # Register fold to folded_list
         folded_list.append(player_index%player_count)
