@@ -38,7 +38,7 @@ addressess = socket.getaddrinfo(socket.gethostname(), port)
 
 for i in range(len(addressess)):
     print(f"{i}: {addressess[i]}")
-choice = int(input("Choose which addr to use"))
+choice = int(input("Choose which addr to use: "))
 
 address = addressess[choice][-1][0]
 

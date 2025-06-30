@@ -81,3 +81,4 @@ def broadcast(clients: list[socket.socket], data, except_addr: socket.socket | N
         if client == except_addr:
             continue
         client.send(data)
+        time.sleep(0.05) # Fix some bugs relating to sending data too fast
