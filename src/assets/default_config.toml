@@ -1,0 +1,7 @@
+[server]
+ip = "127.0.0.1"
+port = 8080
+
+[game]
+starting_chips = 100
+max_players = 5
