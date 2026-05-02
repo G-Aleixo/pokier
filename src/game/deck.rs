@@ -1,6 +1,7 @@
 use std::{char, slice::Iter};
 
 use rand::{seq::SliceRandom};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Deck {
@@ -83,6 +84,7 @@ impl Deck {
 }
 
 #[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
 pub struct Card {
     pub rank: Rank,
     pub suit: Suit
@@ -184,6 +186,7 @@ impl Card {
 }
 
 #[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
 pub enum Rank {
     Two,
     Three,
@@ -286,6 +289,7 @@ impl Rank {
 
 
 #[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
 pub enum Suit {
     Spades,
     Clubs,
