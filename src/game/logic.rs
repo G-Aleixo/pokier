@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, mpsc};
 
-use crate::game::{Deck, GameStateSnapshot, GameStatus, PlayerState, PlayerStatus, message::{ClientMessage, ServerMessage}, state::{GameState, PlayerId}};
+use crate::game::{ClientAction, Deck, GameStateSnapshot, GameStatus, PlayerState, PlayerStatus, message::{ClientMessage, ServerMessage}, state::{GameState, PlayerId}};
 
 #[derive(Debug)]
 pub struct GameServer {
@@ -22,11 +22,35 @@ impl GameServer {
 
             // check if it's time to show another card
             if !matches!(self.state.status, GameStatus::GameEnd | GameStatus::WaitingPlayers) {
-                if self.state.current_turn as usize >= self.state.turn_order.len() {
+                if self.state.current_turn >= self.state.turn_order.len() {
                     self.state.current_turn %= self.state.turn_order.len();
-                    self.deal_public();
+                }
+                
+                // advance current_turn until a player is able to play
+                let starting = self.state.current_turn;
+                while !self.can_play(&self.state.turn_order[self.state.current_turn]) {
+                    self.state.current_turn += 1;
+
+                    self.state.current_turn %= self.state.turn_order.len();
+
+                    if self.state.current_turn == starting {
+                        self.state.resolved = true;
+                        break
+                    }
 
                     self.dirty();
+                }
+
+                // advance to next round
+                if self.state.resolved {
+                    if self.state.status == GameStatus::FinalBet {
+                        todo!("RUN WINNING CODE LOGIC");
+                    }
+
+                    self.deal_public();
+                    self.state.current_turn = 0;
+
+                    self.dirty();   
                 }
             }
         
@@ -35,6 +59,17 @@ impl GameServer {
                 self.state.dirty = false;
             }
         }
+    }
+
+    pub fn is_turn(&self, player: &PlayerId) -> bool {
+        if let Some(player_state) = self.state.players.get(player) && self.state.turn_order[self.state.current_turn] == player_state.id {
+            return true
+        }
+        false
+    }
+
+    pub fn can_play(&self, player: &PlayerId) -> bool {
+        self.is_turn(player) && self.state.players.get(player).unwrap().status == PlayerStatus::Playing
     }
 
     pub fn dirty(&mut self) {
@@ -59,15 +94,42 @@ impl GameServer {
                     hand: vec![],
                     status: PlayerStatus::Waiting,
                     score: 100,
+                    betted: 0,
                 });
                 // check for connected player amount and auto start
-                if self.connected_count() >= 2 && self.state.status == GameStatus::WaitingPlayers {
+                if self.connected_count() >= 3 && self.state.status == GameStatus::WaitingPlayers {
                     self.state.status = GameStatus::InRound;
 
                     self.setup_game().await;
                 }
 
                 self.dirty();
+            }
+            ClientMessage::Action(action) => {
+                if matches!(self.state.status, GameStatus::GameEnd | GameStatus::WaitingPlayers) {
+                    return
+                }
+                if self.is_turn(&from) {
+                    match action {
+                        ClientAction::Bet(amount) => {
+                            // includes 0 bets as a kind of all-in
+                            if amount <= self.state.players.get(&from).unwrap().score {
+                                self.state.players.get_mut(&from).unwrap().score -= amount;
+                                self.state.players.get_mut(&from).unwrap().betted += amount;
+                                self.state.pool += amount;
+                            
+                                self.state.current_turn += 1;
+                                self.dirty();
+                            }
+                        }
+                        ClientAction::Fold => {
+                            self.state.players.get_mut(&from).unwrap().status = PlayerStatus::Folded;
+
+                            self.state.current_turn += 1;
+                            self.dirty();
+                        }
+                    }
+                }
             }
         }
     }

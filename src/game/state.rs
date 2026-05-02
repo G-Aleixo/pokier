@@ -16,6 +16,10 @@ pub struct GameState {
     pub current_turn: usize,
     pub status: GameStatus,
 
+    pub last_action: Option<usize>,
+    pub resolved: bool,
+    pub pool: u32,
+
     pub dirty: bool,
 }
 
@@ -30,6 +34,9 @@ impl Default for GameState {
             current_turn: 0,
             status: GameStatus::WaitingPlayers,
             dirty: false,
+            last_action: None,
+            resolved: false,
+            pool: 0,
         }
     }
 }
@@ -49,6 +56,7 @@ pub struct PlayerState {
     pub hand: Vec<Card>,
     pub status: PlayerStatus,
     pub score: u32,
+    pub betted: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

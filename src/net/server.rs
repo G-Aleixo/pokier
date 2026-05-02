@@ -1,18 +1,20 @@
-use tokio::{io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::TcpStream};
+use tokio::{io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt}};
 
 use crate::game::{ClientMessage, ServerMessage};
 
-pub async fn recv_client_message(read: &mut ReadHalf<TcpStream>) -> Result<ClientMessage, postcard::Error> {
+pub async fn recv_client_message<R>(read: &mut R) -> Result<ClientMessage, postcard::Error>
+    where R: AsyncRead + Unpin
+{
     let length = read.read_u32().await.unwrap();
 
     let mut buf = vec![0u8; length as usize];
     read.read_exact(&mut buf).await.unwrap();
-    let decoded = postcard::from_bytes(&buf);
-
-    decoded
+    postcard::from_bytes(&buf)
 }
 
-pub async fn send_server_message(write: &mut WriteHalf<TcpStream>, msg: &ServerMessage) -> Result<(), postcard::Error> {
+pub async fn send_server_message<W>(write: &mut W, msg: &ServerMessage) -> Result<(), postcard::Error>
+    where W: AsyncWrite + Unpin
+{
     let encoded = postcard::to_allocvec(msg)?;
     let length = encoded.len() as u32;
     

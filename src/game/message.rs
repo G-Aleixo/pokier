@@ -23,7 +23,9 @@ impl GameStateSnapshot {
                 PlayerPublic {
                     id: player_state.id,
                     hand_size: player_state.hand.len(),
-                    status: player_state.status
+                    status: player_state.status,
+                    score: player_state.score,
+                    betted: player_state.betted,
                 }
             }).collect(),
             turn_order: state.turn_order.clone(),
@@ -39,7 +41,9 @@ impl GameStateSnapshot {
 pub struct PlayerPublic {
     id: PlayerId,
     hand_size: usize,
-    status: PlayerStatus
+    status: PlayerStatus,
+    score: u32,
+    betted: u32,
 }
 
 impl PlayerPublic {
@@ -47,7 +51,9 @@ impl PlayerPublic {
         PlayerPublic {
             id: player.id,
             hand_size: player.hand.len(),
-            status: player.status
+            status: player.status,
+            score: player.score,
+            betted: player.betted,
         }
     }
 }
@@ -57,10 +63,26 @@ impl PlayerPublic {
 pub enum ClientMessage {
     RequestSnapshot,
     PlayerJoin,
+    Action(ClientAction),
+}
+
+#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize)]
+pub enum ClientAction {
+    /// Bet emcompasses all the actions a player may do that involves chips
+    /// It considers the current amount the player already has in the pool
+    /// Bet { current_amount } is a check
+    /// Bet { current_amount + n } is a raise 
+    Bet(u32),
+    Fold,
 }
 
 #[derive(Debug, Clone)]
 #[derive(Serialize, Deserialize)]
 pub enum ServerMessage {
-    Snapshot(GameStateSnapshot)
+    Snapshot(GameStateSnapshot),
+    // invalid messages from the client will just be discarded
+    // the current model where a whole snapshot is sent means that
+    // everyone should be synced up
+    // Invalid,
 }

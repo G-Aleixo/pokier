@@ -13,5 +13,8 @@ async fn main() {
     loop {
         println!("awaiting msg");
         println!("{:#?}", recv_server_message(&mut conn).await.unwrap());
+
+        println!("sending fold");
+        send_client_message(&mut conn, &pokier::game::ClientMessage::Action(pokier::game::ClientAction::Fold)).await.unwrap();
     }
 }

@@ -8,10 +8,9 @@ pub async fn recv_server_message<R>(read: &mut R) -> Result<ServerMessage, postc
     let length = read.read_u32().await.unwrap();
 
     let mut buf = vec![0u8; length as usize];
-    read.read_exact(&mut buf).await.unwrap();
-    let decoded = postcard::from_bytes(&buf);
 
-    decoded
+    read.read_exact(&mut buf).await.unwrap();
+    postcard::from_bytes(&buf)
 }
 
 pub async fn send_client_message<W>(write: &mut W, msg: &ClientMessage) -> Result<(), postcard::Error>
