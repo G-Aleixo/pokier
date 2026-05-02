@@ -98,6 +98,7 @@ impl Card {
         }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Result<Card, &'static str> {
         if s.len() != 2 {
             return Err("Invalid str size")
