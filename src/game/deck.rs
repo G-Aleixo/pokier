@@ -186,7 +186,7 @@ impl Card {
     }
 }
 
-#[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Serialize, Deserialize)]
 pub enum Rank {
     Two,
@@ -289,7 +289,7 @@ impl Rank {
 }
 
 
-#[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Serialize, Deserialize)]
 pub enum Suit {
     Spades,

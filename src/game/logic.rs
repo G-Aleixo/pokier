@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{Mutex, mpsc};
 
-use crate::game::{ClientAction, Deck, GameStateSnapshot, GameStatus, PlayerState, PlayerStatus, message::{ClientMessage, ServerMessage}, state::{GameState, PlayerId}};
+use crate::game::{ClientAction, Deck, GameStateSnapshot, GameStatus, PlayerState, PlayerStatus, evaluate_hand, message::{ClientMessage, ServerMessage}, state::{GameState, PlayerId}};
 
 #[derive(Debug)]
 pub struct GameServer {
@@ -44,7 +44,17 @@ impl GameServer {
                 // advance to next round
                 if self.state.resolved {
                     if self.state.status == GameStatus::FinalBet {
-                        todo!("RUN WINNING CODE LOGIC");
+                        let winners = self.determine_winner();
+
+                        // split the pot among everyone
+                        let per_player = self.state.pool.checked_div(winners.len() as u32).unwrap_or(0);
+
+                        for id in winners {
+                            self.state.players.get_mut(&id).unwrap().score += per_player;
+                        }
+
+                        self.state.status = GameStatus::GameEnd;
+                        break;
                     }
 
                     self.deal_public();
@@ -150,7 +160,7 @@ impl GameServer {
         }
     }
 
-    pub async fn send_to(&self, msg: &ServerMessage, player: &PlayerId) -> Result<(), mpsc::error::SendError<ServerMessage>> {
+    async fn send_to(&self, msg: &ServerMessage, player: &PlayerId) -> Result<(), mpsc::error::SendError<ServerMessage>> {
         if let Some(tx) = self.outgoing.lock().await.get(player) {
             tx.send(msg.clone()).await?;
             println!("sent to tx {player}");
@@ -207,6 +217,11 @@ impl GameServer {
 
         self.state.status = GameStatus::WaitingPlayers;
 
+        for player in self.state.players.values_mut() {
+            player.betted = 0;
+            player.hand = vec![]
+        }
+
         self.dirty();
     }
 
@@ -257,5 +272,21 @@ impl GameServer {
         };
 
         self.dirty();
+    }
+
+    fn determine_winner(&self) -> Vec<PlayerId> {
+        let hands: Vec<_> = self.state.players.iter().filter(|(id, _)| self.can_play(id)).map(|(id, player_state)| {(*id, [player_state.hand.clone(), self.state.river.clone()].concat())}).collect();
+        let strengths: Vec<_> = hands.iter().map(|(from, hand)| (from, evaluate_hand(hand))).collect();
+
+        let best = match strengths.iter().max() {
+            Some(v) => v,
+            None => {
+                return vec![]
+            }
+        };
+
+        let aaaa: Vec<_> = strengths.iter().filter(|(_, s)| *s == best.1).map(|(i, _)| *i).collect();
+    
+        aaaa.iter().map(|v| **v).collect()
     }
 }
