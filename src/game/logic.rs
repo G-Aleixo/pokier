@@ -122,12 +122,20 @@ impl GameServer {
                 if self.is_turn(&from) {
                     match action {
                         ClientAction::Bet(amount) => {
+                            let player = self.state.players.get_mut(&from).unwrap();
                             // includes 0 bets as a kind of all-in
-                            if amount <= self.state.players.get(&from).unwrap().score {
-                                self.state.players.get_mut(&from).unwrap().score -= amount;
-                                self.state.players.get_mut(&from).unwrap().betted += amount;
+                            if (amount <= player.score
+                                && player.betted + amount >= self.state.min_bet)
+                                || player.score - amount == 0
+                             {
+                                
+                                player.score -= amount;
+                                player.betted += amount;
+                                
+                                self.state.min_bet = self.state.min_bet.max(player.betted);
+                                
                                 self.state.pool += amount;
-                            
+                                
                                 self.state.current_turn += 1;
                                 self.dirty();
                             }

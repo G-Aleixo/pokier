@@ -16,6 +16,7 @@ pub struct GameState {
     pub current_turn: usize,
     pub status: GameStatus,
 
+    pub min_bet: u32,
     pub last_action: Option<usize>,
     pub resolved: bool,
     pub pool: u32,
@@ -36,6 +37,7 @@ impl Default for GameState {
             dirty: false,
             last_action: None,
             resolved: false,
+            min_bet: 0,
             pool: 0,
         }
     }

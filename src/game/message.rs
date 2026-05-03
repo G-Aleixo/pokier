@@ -12,6 +12,9 @@ pub struct GameStateSnapshot {
     current_turn: usize,
     game_status: GameStatus,
     my_hand: Vec<Card>, // only for the recipient
+    
+    min_bet: u32,
+    pool: u32,
 }
 
 impl GameStateSnapshot {
@@ -32,6 +35,8 @@ impl GameStateSnapshot {
             current_turn: state.current_turn,
             game_status: state.status,
             my_hand: state.players.get(player).unwrap().hand.clone(),
+            min_bet: state.min_bet,
+            pool: state.pool,
         }
     }
 }
@@ -70,9 +75,6 @@ pub enum ClientMessage {
 #[derive(Serialize, Deserialize)]
 pub enum ClientAction {
     /// Bet emcompasses all the actions a player may do that involves chips
-    /// It considers the current amount the player already has in the pool
-    /// Bet { current_amount } is a check
-    /// Bet { current_amount + n } is a raise 
     Bet(u32),
     Fold,
 }
