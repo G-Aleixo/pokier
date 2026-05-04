@@ -5,16 +5,16 @@ use crate::game::{Card, GameState, GameStatus, PlayerId, PlayerState, PlayerStat
 #[derive(Debug, Clone)]
 #[derive(Serialize, Deserialize)]
 pub struct GameStateSnapshot {
-    deck_size: usize,
-    river: Vec<Card>,
-    players: Vec<PlayerPublic>,
-    turn_order: Vec<PlayerId>,
-    current_turn: usize,
-    game_status: GameStatus,
-    my_hand: Vec<Card>, // only for the recipient
+    pub deck_size: usize,
+    pub river: Vec<Card>,
+    pub players: Vec<PlayerPublic>,
+    pub turn_order: Vec<PlayerId>,
+    pub current_turn: usize,
+    pub game_status: GameStatus,
+    pub my_hand: Vec<Card>, // only for the recipient
     
-    min_bet: u32,
-    pool: u32,
+    pub min_bet: u32,
+    pub pool: u32,
 }
 
 impl GameStateSnapshot {
@@ -44,11 +44,11 @@ impl GameStateSnapshot {
 #[derive(Debug, Clone, Copy)]
 #[derive(Serialize, Deserialize)]
 pub struct PlayerPublic {
-    id: PlayerId,
-    hand_size: usize,
-    status: PlayerStatus,
-    score: u32,
-    betted: u32,
+    pub id: PlayerId,
+    pub hand_size: usize,
+    pub status: PlayerStatus,
+    pub score: u32,
+    pub betted: u32,
 }
 
 impl PlayerPublic {

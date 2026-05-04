@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use pokier::{game::{ClientMessage, GameStateSnapshot, ServerMessage}, net::client::{recv_server_message, send_client_message}};
-use ratatui::{DefaultTerminal, Frame, buffer::Buffer, layout::Rect, style::Stylize, symbols::border, text::{Line, Text}, widgets::{Block, Paragraph, Widget}};
+use ratatui::{DefaultTerminal, Frame, buffer::Buffer, layout::{Constraint, Direction, Flex, Layout, Rect}, macros::constraints, style::Stylize, symbols::border, text::{Line, Text}, widgets::{Block, Paragraph, Widget}};
 use tokio::{io::{AsyncRead, AsyncWrite, split}, net::TcpStream, sync::mpsc};
 
 
@@ -125,8 +125,30 @@ impl<W: AsyncWrite + Unpin> App<W> {
 impl<W: AsyncWrite + Unpin> Widget for &App<W> {
     fn render(self, area: Rect, buf: &mut Buffer)
     where Self: Sized {
-        let block = Block::bordered().title(Line::from(" Testing the title :) ").centered()).title_bottom(Line::from(vec![" Quit ".into(), "<Q>".blue().bold(), " ".into()]).centered()).border_set(border::THICK);
+        let title = Line::from(" Pokier TUI Client ");
+        let instructions = Line::from(vec![" Quit ".into(), "<Q>".blue().bold(), " ".into()]);
 
-        Paragraph::new(Text::from("Triying out the text")).centered().block(block).render(area, buf);
+        let block = Block::bordered().title(title.centered()).title_bottom(instructions.centered()).border_set(border::THICK);
+
+        let horizontal_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Percentage(70),
+                Constraint::Min(22),
+            ])
+            .split(area);
+
+        self.game_state.clone().and_then(|state| {
+            let player_list: Vec<_> =  state.players;
+            for i in 0..player_list.len() {
+                let area = Rect::new(horizontal_layout[1].x + 1, horizontal_layout[1].y + 1 + i as u16, horizontal_layout[1].width - 2, 1);
+            
+                Text::from(format!("{:10}: {}", player_list[i].id, player_list[i].score.to_string())).render(area, buf);
+            };
+
+            Some(())
+        });
+
+        Paragraph::new(Text::from("Trying out the text")).centered().block(block).render(horizontal_layout[0], buf);
     }
 }
