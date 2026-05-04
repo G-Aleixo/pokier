@@ -39,6 +39,7 @@ async fn read_crossterm_event(tx: mpsc::Sender<ClientEvent>) {
     loop {
         match event::read().unwrap() {
             Event::Key(key_event) => tx.send(ClientEvent::Input(key_event)).await.unwrap(),
+            Event::Resize(width, height) => tx.send(ClientEvent::Resize(width, height)).await.unwrap(),
             _ => {}
         }
     }
@@ -50,6 +51,7 @@ where W: AsyncWrite + Unpin
     game_state: Option<GameStateSnapshot>,
     event_rx: mpsc::Receiver<ClientEvent>,
     server_write: W,
+    window_size: Rect,
     exit: bool,
 }
 
@@ -59,6 +61,7 @@ impl<W: AsyncWrite + Unpin> App<W> {
         send_client_message(&mut self.server_write, &ClientMessage::PlayerJoin).await.unwrap();
 
         while !self.exit {
+            terminal.resize(self.window_size)?;
             terminal.draw(|frame| self.draw(frame))?;
             
             self.handle_events().await?;
@@ -75,6 +78,9 @@ impl<W: AsyncWrite + Unpin> App<W> {
         match self.event_rx.recv().await.unwrap() {
             ClientEvent::Input(key_event) if key_event.kind == KeyEventKind::Press => {
                 self.handle_key_event(key_event)
+            }
+            ClientEvent::Resize(width, height) => {
+                self.window_size = Rect::new(0, 0, width, height);
             }
             ClientEvent::ServerMessage(message) => {
                 match message {
@@ -100,6 +106,7 @@ impl<W: AsyncWrite + Unpin> App<W> {
 
 enum ClientEvent {
     Input(KeyEvent),
+    Resize(u16, u16),
     ServerMessage(ServerMessage)
 }
 
@@ -109,6 +116,7 @@ impl<W: AsyncWrite + Unpin> App<W> {
             event_rx: event_rx,
             server_write: server_write,
             game_state: None,
+            window_size: Rect::default(),
             exit: false,
         }
     }
