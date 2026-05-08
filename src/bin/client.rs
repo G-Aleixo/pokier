@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use pokier::{game::{ClientMessage, GameStateSnapshot, ServerMessage}, net::client::{recv_server_message, send_client_message}};
-use ratatui::{DefaultTerminal, Frame, buffer::Buffer, layout::{Constraint, Direction, Flex, Layout, Rect}, macros::constraints, style::Stylize, symbols::border, text::{Line, Text}, widgets::{Block, Paragraph, Widget}};
+use pokier::{game::{ClientMessage, GameStateSnapshot, PlayerStatus, ServerMessage}, net::client::{recv_server_message, send_client_message}};
+use ratatui::{DefaultTerminal, Frame, buffer::Buffer, layout::{Constraint, Direction, Layout, Rect, Size}, style::Stylize, symbols::{border, merge::MergeStrategy}, text::{Line, Text}, widgets::{Block, Paragraph, Widget}};
 use tokio::{io::{AsyncRead, AsyncWrite, split}, net::TcpStream, sync::mpsc};
 
 
@@ -29,16 +29,23 @@ async fn recv_message<R>(tx: mpsc::Sender<ClientEvent>, mut reader: R)
 where R: AsyncRead + Unpin
 {
     loop {
-        let message = recv_server_message(&mut reader).await.unwrap();
-    
-        tx.send(ClientEvent::ServerMessage(message)).await.unwrap();
+        if let Ok(message) = recv_server_message(&mut reader).await {
+            tx.send(ClientEvent::ServerMessage(message)).await.unwrap();
+        }
     }
 }
 
 async fn read_crossterm_event(tx: mpsc::Sender<ClientEvent>) {
     loop {
         match event::read().unwrap() {
-            Event::Key(key_event) => tx.send(ClientEvent::Input(key_event)).await.unwrap(),
+            Event::Key(key_event) => {
+                tx.send(ClientEvent::Input(key_event)).await.unwrap();
+            
+                if key_event.code == KeyCode::Char('q') {
+                    break
+                }
+
+            }
             Event::Resize(width, height) => tx.send(ClientEvent::Resize(width, height)).await.unwrap(),
             _ => {}
         }
@@ -113,8 +120,8 @@ enum ClientEvent {
 impl<W: AsyncWrite + Unpin> App<W> {
     fn new(event_rx: mpsc::Receiver<ClientEvent>, server_write: W) -> Self {
         App {
-            event_rx: event_rx,
-            server_write: server_write,
+            event_rx,
+            server_write,
             game_state: None,
             window_size: Rect::default(),
             exit: false,
@@ -130,25 +137,80 @@ impl<W: AsyncWrite + Unpin> Widget for &App<W> {
 
         let block = Block::bordered().title(title.centered()).title_bottom(instructions.centered()).border_set(border::THICK);
 
-        let horizontal_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Percentage(70),
-                Constraint::Min(22),
-            ])
-            .split(area);
+        match &self.game_state {
+            None => {
+                let msg = String::from("\nServer not connected");
+                let area = area.centered(Constraint::Length(msg.len() as u16 + 5), Constraint::Length(5));
+                
+                let block = Block::bordered().border_set(border::THICK);
+                
+                Paragraph::new(Text::from(msg)).centered().block(block).render(area, buf);
+            }
 
-        self.game_state.clone().and_then(|state| {
-            let player_list: Vec<_> =  state.players;
-            for i in 0..player_list.len() {
-                let area = Rect::new(horizontal_layout[1].x + 1, horizontal_layout[1].y + 1 + i as u16, horizontal_layout[1].width - 2, 1);
-            
-                Text::from(format!("{:10}: {}", player_list[i].id, player_list[i].score.to_string())).render(area, buf);
-            };
+            Some(state) => {
+                let state = state.clone();
 
-            Some(())
-        });
+                let horizontal_layout = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints(vec![
+                        Constraint::Percentage(70),
+                        Constraint::Min(22),
+                    ])
+                    .split(area);
 
-        Paragraph::new(Text::from("Trying out the text")).centered().block(block).render(horizontal_layout[0], buf);
+                let player_list_layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints(vec![
+                        Constraint::Percentage(40),
+                        Constraint::Percentage(60)
+                    ])
+                    .split(horizontal_layout[1]);
+                let round_order = player_list_layout[0];
+                let round_order = round_order.resize(Size::new(round_order.width, round_order.height + 1));
+                let other_players = player_list_layout[1];
+
+                for (i, id) in state.turn_order.iter().enumerate() {
+                    let area = Rect::new(round_order.x + 1, round_order.y + 1 + i as u16, round_order.width - 2, 1);
+
+                    let player = state.players.get(id).unwrap();
+
+                    let mut text = Text::from(format!("{:10}: {}", player.id, player.score));
+
+                    if matches!(player.status, PlayerStatus::Disconnected | PlayerStatus::Folded) {
+                        text = text.gray();
+                    }
+
+                    text.render(area, buf);
+                }
+
+                Block::bordered().border_set(border::THICK).merge_borders(MergeStrategy::Exact).render(round_order, buf);
+
+                for (i, player_state) in state.players.values().enumerate() {
+                    let area = Rect::new(other_players.x + 1,other_players.y + 1 + i as u16,other_players.width - 2, 1);
+                
+                    let mut text = Text::from(format!("{:10}: {}", player_state.id, player_state.score));
+
+                    if matches!(player_state.status, PlayerStatus::Disconnected | PlayerStatus::Waiting) {
+                        text = text.gray();
+                    }
+
+                    if player_state.id == state.my_id {
+                        text = text.light_green();
+                    }
+
+                    text.render(area, buf);
+                };
+
+                Block::bordered().border_set(border::THICK).merge_borders(MergeStrategy::Exact).render(other_players, buf);
+            }
+        }
+
+        block.merge_borders(MergeStrategy::Fuzzy).render(area, buf);
     }
 }
+
+
+
+//TODO: implement the left and main side of ui
+// + connection interface
+// + lan discovery

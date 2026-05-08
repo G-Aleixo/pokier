@@ -47,8 +47,10 @@ async fn read_handler(mut reader: ReadHalf<TcpStream>, tx: mpsc::Sender<(ClientM
     }
 }
 
-async fn write_handler(mut writer: WriteHalf<TcpStream>, mut rx: mpsc::Receiver<ServerMessage>) {
+async fn write_handler(mut writer: WriteHalf<TcpStream>, mut rx: mpsc::Receiver<ServerMessage>) -> std::io::Result<()> {
     while let Some(msg) = rx.recv().await {
-        pokier::net::server::send_server_message(&mut writer, &msg).await.unwrap();
+        pokier::net::server::send_server_message(&mut writer, &msg).await?;
     }
+
+    Ok(())
 }

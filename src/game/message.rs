@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::game::{Card, GameState, GameStatus, PlayerId, PlayerState, PlayerStatus};
@@ -7,11 +8,12 @@ use crate::game::{Card, GameState, GameStatus, PlayerId, PlayerState, PlayerStat
 pub struct GameStateSnapshot {
     pub deck_size: usize,
     pub river: Vec<Card>,
-    pub players: Vec<PlayerPublic>,
+    pub players: HashMap<PlayerId, PlayerPublic>,
     pub turn_order: Vec<PlayerId>,
     pub current_turn: usize,
     pub game_status: GameStatus,
     pub my_hand: Vec<Card>, // only for the recipient
+    pub my_id: PlayerId,
     
     pub min_bet: u32,
     pub pool: u32,
@@ -23,18 +25,19 @@ impl GameStateSnapshot {
             deck_size: state.deck.undealt_count(),
             river: state.river.clone(),
             players: state.players.values().map(|player_state| {
-                PlayerPublic {
+                (player_state.id, PlayerPublic {
                     id: player_state.id,
                     hand_size: player_state.hand.len(),
                     status: player_state.status,
                     score: player_state.score,
                     betted: player_state.betted,
-                }
+                })
             }).collect(),
             turn_order: state.turn_order.clone(),
             current_turn: state.current_turn,
             game_status: state.status,
             my_hand: state.players.get(player).unwrap().hand.clone(),
+            my_id: *player,
             min_bet: state.min_bet,
             pool: state.pool,
         }
